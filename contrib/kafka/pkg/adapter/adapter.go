@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
@@ -146,6 +147,7 @@ func (a *Adapter) Start(ctx context.Context, stopCh <-chan struct{}) error {
 }
 
 func (a *Adapter) postMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
+	logger := logging.FromContext(ctx)
 
 	extensions := map[string]interface{}{
 		"key": string(msg.Key),
@@ -163,7 +165,10 @@ func (a *Adapter) postMessage(ctx context.Context, msg *sarama.ConsumerMessage) 
 		Data: a.jsonEncode(ctx, msg.Value),
 	}
 
+	start := time.Now()
 	_, err := a.client.Send(ctx, event)
+	elapsed := time.Now().Sub(start)
+	logger.Infof("Sinking event took %d ms\n", elapsed.Nanoseconds()/1000000)
 	return err
 }
 
