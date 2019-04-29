@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -74,6 +75,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to create logger: %v", err)
 	}
+
+	// Ensure we reuse connections better when sinking at a high
+	// concurrency to a single host
+	http.DefaultTransport.(*http.Transport).MaxIdleConns = 500
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+	http.DefaultTransport.(*http.Transport).MaxConnsPerHost = 500
 
 	adapter := &kafka.Adapter{
 		BootstrapServers: getRequiredEnv(envBootstrapServers),
